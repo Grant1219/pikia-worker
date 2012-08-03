@@ -3,24 +3,42 @@
 #include <worker.hpp>
 
 namespace pikia {
-    worker::worker (const std::string& _sqlConnectionString, redisContext* _redis, const Beanstalk::Client& _bean)
-        : done (true), executor (boost::thread::hardware_concurrency () ), sql (_sqlConnectionString), bean (_bean) {
-        this->redis = _redis;
+    worker::worker (int _workerId, std::string _sqlString, std::string _redisHost, uint16_t _redisPort, std::string _beanHost, uint16_t _beanPort)
+    : done (false), workerId (_workerId), sql (_sqlString), bean (_beanHost, _beanPort) {
+        this->redis = redisConnect (_redisHost.c_str (), _redisPort);
+
+        if (this->redis->err) {
+            throw std::runtime_error (this->redis->errstr);
+        }
     }
 
     worker::~worker () {
+        redisFree (this->redis);
     }
 
     void worker::do_work () {
-        // reserve a job from beanstalk
+        std::cout << "Worker in thread " << boost::this_thread::get_id () << " doing work!" << std::endl;
+
+        redisReply* reply;
         Beanstalk::Job job;
 
-        this->bean.reserve (job);
+        do {
+            // reserve a job from beanstalk
+            if (this->bean.reserve (job, 0) ) {
+                // TODO handle whatever the job is
 
-        if (job) {
-            // TODO handle whatever the job is
+                this->bean.del (job.id () );
+            }
+            else
+                boost::this_thread::yield ();
 
-            this->bean.del (job.id () );
-        }
+            // check if this worker needs to shut down
+            reply = (redisReply*)redisCommand (this->redis, "EXISTS worker:%i:shutdown", this->workerId);
+            if (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1) {
+                std::cout << "Worker in thread " << boost::this_thread::get_id () << " got shutdown signal!" << std::endl;
+                done = true;
+            }
+            freeReplyObject (reply);
+        } while (!done);
     }
 }

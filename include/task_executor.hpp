@@ -17,7 +17,7 @@ namespace pikia {
                 this->pool.join_all ();
             }
 
-            template <typename T> void submit (T task) {
+            template<typename T> void submit (T task) {
                 this->io_service.post (task);
             }
 
