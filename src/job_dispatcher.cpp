@@ -1,3 +1,4 @@
+#include <boost/filesystem.hpp>
 #include <util.hpp>
 #include <job_dispatcher.hpp>
 
@@ -37,12 +38,12 @@ namespace pikia {
         luabind::globals (this->lua) ["dispatcher"] = this;
 
         // load the scripts
-        std::vector<std::string> scripts;
-        scripts.push_back ("scripts/test.lua");
-
-        for (std::vector<std::string>::iterator it = scripts.begin (); it != scripts.end (); ++it) {
-            std::cout << "Loading lua script: " << (*it) << std::endl;
-            luaL_dofile (this->lua, (*it).c_str () );
+        boost::filesystem::path luaExt (".lua");
+        for (boost::filesystem::recursive_directory_iterator end, dir ("./scripts"); dir != end; ++dir) {
+            if (boost::filesystem::is_regular_file (*dir) && (*dir).path ().extension () == luaExt) {
+                std::cout << "Loading lua script: " << (*dir) << std::endl;
+                luaL_dofile (this->lua, (*dir).path ().string ().c_str () );
+            }
         }
     }
 
