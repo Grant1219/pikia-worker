@@ -16,7 +16,7 @@ namespace pikia {
             job_dispatcher (boost::shared_ptr<connection_bundle> _bundle);
             ~job_dispatcher ();
 
-            bool register_handler (uint32_t _id, const boost::function<bool (job_context&)>& _callback);
+            bool register_handler (uint32_t _id, boost::function<bool (job_context&)> _callback);
             bool register_handler (uint32_t _id, const luabind::object& _callback);
             void unregister_handler (uint32_t _id);
 
@@ -30,7 +30,7 @@ namespace pikia {
             lua_State* lua;
             boost::shared_ptr<connection_bundle> bundle;
 
-            std::map<uint32_t, const boost::function<bool (job_context&)> > jobHandlers;
+            std::map<uint32_t, boost::function<bool (job_context&)> > jobHandlers;
 
         private:
             class lua_job_handler {

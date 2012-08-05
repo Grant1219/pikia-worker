@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/thread.hpp>
+#include <job_context.hpp>
 #include <worker.hpp>
 
 namespace pikia {
@@ -9,6 +10,11 @@ namespace pikia {
         this->bundle->bean->ignore ("default");
         this->bundle->bean->watch ("worker:" + std::to_string (this->realmId) );
         this->bundle->bean->use ("realm:" + std::to_string (this->realmId) );
+
+        // TEST
+        job_context context;
+        context.id = 1;
+        this->dispatcher->dispatch_job (context);
     }
 
     worker::~worker () {

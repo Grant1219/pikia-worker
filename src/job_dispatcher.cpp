@@ -1,5 +1,5 @@
 #include <boost/filesystem.hpp>
-#include <util.hpp>
+#include <boost/bind.hpp>
 #include <job_dispatcher.hpp>
 
 namespace pikia {
@@ -9,16 +9,41 @@ namespace pikia {
     }
 
     job_dispatcher::~job_dispatcher () {
-        this->close_lua();
+        // callbacks must be destroyed before lua is unloaded because they contain references to lua objects
+        this->jobHandlers.clear ();
+        this->close_lua ();
     }
 
-    bool job_dispatcher::register_handler (uint32_t _id, const boost::function<bool (job_context&)>& _callback) {
-        return true;
+    bool job_dispatcher::register_handler (uint32_t _id, boost::function<bool (job_context&)> _callback) {
+        std::cout << "Registering callback for job ID: " << _id << std::endl;
+        if (this->jobHandlers.find (_id) == this->jobHandlers.end () ) {
+            this->jobHandlers[_id] = _callback;
+            return true;
+        }
+        return false;
     }
 
     bool job_dispatcher::register_handler (uint32_t _id, const luabind::object& _callback) {
-        std::cout << "Lua job handler registered!" << std::endl;
-        return true;
+        std::cout << "Registering lua function for job ID: " << _id << std::endl;
+        if (luabind::type (_callback) == LUA_TFUNCTION) {
+            boost::shared_ptr<lua_job_handler> handler (new job_dispatcher::lua_job_handler (_callback) );
+            return register_handler (_id, boost::function<bool (job_context&)> (boost::bind<bool> (&job_dispatcher::lua_job_handler::operator (), handler, _1) ) );
+        }
+        std::cout << "Error: The given lua object is not callable" << std::endl;
+        return false;
+    }
+
+    bool job_dispatcher::dispatch_job (job_context& _context) {
+        std::map<uint32_t, boost::function<bool (job_context&)> >::iterator it = this->jobHandlers.find (_context.id);
+        if (it != this->jobHandlers.end () ) {
+            try {
+                return (*it).second (_context);
+            }
+            catch (const std::exception& e) {
+                std::cout << "Error dispatching job: " << e.what () << std::endl;
+            }
+        }
+        return false;
     }
 
     void job_dispatcher::setup_lua () {
@@ -32,17 +57,25 @@ namespace pikia {
 
         luabind::module (this->lua, "pikia") [
             luabind::class_<job_dispatcher> ("job_dispatcher")
-                .def ("register_handler", (bool (job_dispatcher::*) (uint32_t, const luabind::object&) ) &job_dispatcher::register_handler)
+                .def ("register_handler", (bool (job_dispatcher::*) (uint32_t, const luabind::object&) ) &job_dispatcher::register_handler),
+
+            luabind::class_<job_context> ("job_context")
+                .def_readonly ("id", &job_context::id)
         ];
 
         luabind::globals (this->lua) ["dispatcher"] = this;
 
         // load the scripts
+        int result;
         boost::filesystem::path luaExt (".lua");
         for (boost::filesystem::recursive_directory_iterator end, dir ("./scripts"); dir != end; ++dir) {
             if (boost::filesystem::is_regular_file (*dir) && (*dir).path ().extension () == luaExt) {
                 std::cout << "Loading lua script: " << (*dir) << std::endl;
-                luaL_dofile (this->lua, (*dir).path ().string ().c_str () );
+                result = luaL_dofile (this->lua, (*dir).path ().string ().c_str () );
+
+                if (result > 0) {
+                    std::cout << "Error loading script: " << (*dir) << std::endl;
+                }
             }
         }
     }
