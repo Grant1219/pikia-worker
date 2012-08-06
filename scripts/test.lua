@@ -1,5 +1,7 @@
 function handler (jobContext)
-    print ('Inside lua job handler!')
+    print ('Lua handler for job: ' .. jobContext.id)
+    print ('Read int: ' .. jobContext.buf:read_int () )
+    print ('Read string: ' .. jobContext.buf:read_string () )
     return true
 end
 

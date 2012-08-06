@@ -12,8 +12,12 @@ namespace pikia {
         this->bundle->bean->use ("realm:" + std::to_string (this->realmId) );
 
         // TEST
+        job_buffer buf;
+        buf.write_int (8);
+        buf.write_string ("I'm from a job!");
         job_context context;
         context.id = 1;
+        context.buf = buf;
         this->dispatcher->dispatch_job (context);
     }
 
@@ -29,7 +33,8 @@ namespace pikia {
         while (!done) {
             // reserve a job from beanstalk
             if (this->bundle->bean->reserve (job, 0) ) {
-                // TODO handle whatever the job is
+                // get the data out of the job into a buffer for parsing
+                job_buffer buf (job);
 
                 // TODO put the reply
 

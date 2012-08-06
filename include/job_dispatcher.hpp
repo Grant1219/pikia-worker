@@ -13,6 +13,9 @@
 namespace pikia {
     class job_dispatcher {
         public:
+            static void bind (lua_State* _state);
+
+        public:
             job_dispatcher (boost::shared_ptr<connection_bundle> _bundle);
             ~job_dispatcher ();
 
@@ -37,7 +40,7 @@ namespace pikia {
                 public:
                     lua_job_handler (const luabind::object _callback) : callback (_callback) {}
 
-                    bool operator () (job_context& _context) {
+                    bool operator() (job_context& _context) {
                         return luabind::call_function<bool> (this->callback, boost::ref (_context) );
                     }
 

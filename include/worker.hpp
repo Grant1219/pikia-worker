@@ -3,7 +3,7 @@
 #include <atomic>
 #include <boost/shared_ptr.hpp>
 #include <connection_bundle.hpp>
-#include <job_parser.hpp>
+#include <job_buffer.hpp>
 #include <job_dispatcher.hpp>
 
 namespace pikia {
