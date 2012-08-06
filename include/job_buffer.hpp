@@ -15,13 +15,29 @@ namespace pikia {
             job_buffer (const job_buffer& _buf);
             job_buffer (Beanstalk::Job& _job); 
 
-            int32_t read_int ();
-            std::string read_string ();
+            template<typename T>
+            T read_int () {
+                T value;
+                get<T> (this->buf, value);
+                return value;
+            }
 
-            void write_int (int32_t _value);
+            template<typename T>
+            void write_int (T _value) {
+                put<T> (this->buf, _value);
+            }
+
+            std::string read_string ();
             void write_string (std::string _value);
 
+            /**
+             * Empty the internal buffer of any data
+             */
             void clear ();
+
+            /**
+             * Reset the read position of the buffer to the beginning
+             */
             void reset ();
 
             job_buffer& operator= (const job_buffer& _buf) {

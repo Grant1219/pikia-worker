@@ -13,11 +13,11 @@ namespace pikia {
 
         // TEST
         job_buffer buf;
-        buf.write_int (1);
-        buf.write_int (8);
+        buf.write_int<uint32_t> (1);
+        buf.write_int<int32_t> (8);
         buf.write_string ("I'm from a job!");
         job_context context;
-        context.id = buf.read_int (); // TODO read functions need to remove read data from the buffer
+        context.id = buf.read_int<uint32_t> ();
         context.buf = buf;
         this->dispatcher->dispatch_job (context);
     }
@@ -38,7 +38,7 @@ namespace pikia {
                 job_context context;
                 job_buffer buf (job);
 
-                context.id = buf.read_int ();
+                context.id = buf.read_int<uint32_t> ();
                 context.buf = buf;
 
                 this->dispatcher->dispatch_job (context);

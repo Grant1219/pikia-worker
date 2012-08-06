@@ -5,10 +5,22 @@ namespace pikia {
     void job_buffer::bind (lua_State* _state) {
         luabind::module (_state, "pikia") [
             luabind::class_<job_buffer> ("job_buffer")
-                .def ("read_int", &job_buffer::read_int)
+                .def ("read_int8", &job_buffer::read_int<int8_t>)
+                .def ("read_int16", &job_buffer::read_int<int16_t>)
+                .def ("read_int32", &job_buffer::read_int<int32_t>)
+                .def ("read_uint8", &job_buffer::read_int<uint8_t>)
+                .def ("read_uint16", &job_buffer::read_int<uint16_t>)
+                .def ("read_uint32", &job_buffer::read_int<uint32_t>)
                 .def ("read_string", &job_buffer::read_string)
-                .def ("write_int", &job_buffer::write_int)
+                .def ("write_int8", &job_buffer::read_int<int8_t>)
+                .def ("write_int16", &job_buffer::read_int<int16_t>)
+                .def ("write_int32", &job_buffer::write_int<int32_t>)
+                .def ("write_uint8", &job_buffer::read_int<uint8_t>)
+                .def ("write_uint16", &job_buffer::read_int<uint16_t>)
+                .def ("write_uint32", &job_buffer::write_int<uint32_t>)
                 .def ("write_string", &job_buffer::write_string)
+                .def ("clear", &job_buffer::clear)
+                .def ("reset", &job_buffer::reset)
         ];
     }
 
@@ -23,22 +35,12 @@ namespace pikia {
     job_buffer::job_buffer (Beanstalk::Job& _job)
         : pos (0), buf (_job.body () ) {} 
 
-    int32_t job_buffer::read_int () {
-        int32_t value;
-        get<int32_t> (this->buf, value);
-        return value;
-    }
-
     std::string job_buffer::read_string () {
         size_t length;
         get<size_t> (this->buf, length);
         char value[length];
         this->pos += this->buf.sgetn (value, length);
         return value;
-    }
-
-    void job_buffer::write_int (int32_t _value) {
-        put<int32_t> (this->buf, _value);
     }
 
     void job_buffer::write_string (std::string _value) {
