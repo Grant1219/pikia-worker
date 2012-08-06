@@ -3,8 +3,6 @@
 #include <string>
 #include <csignal>
 #include <boost/program_options.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
 #include <boost/thread.hpp>
 #include <boost/signal.hpp>
 #include <worker.hpp>
@@ -38,19 +36,7 @@ int main (int argc, char** argv) {
     }
 
     if (vm.count ("config") ) {
-        boost::property_tree::ptree pt;
-        boost::property_tree::ini_parser::read_ini (vm["config"].as<std::string> (), pt);
 
-        std::string sqlString = "host=" + pt.get<std::string> ("postgres.host") \
-                                 + " user=" + pt.get<std::string> ("postgres.user") \
-                                 + " password=" + pt.get<std::string> ("postgres.pass");
-
-        std::string redisHost = pt.get<std::string> ("redis.host");
-        uint16_t redisPort = pt.get<uint16_t> ("redis.port");
-        std::string beanHost = pt.get<std::string> ("beanstalk.host");
-        uint16_t beanPort = pt.get<uint16_t> ("beanstalk.port");
-
-        int realmId = pt.get<int> ("realm.id");
 
         signal (SIGTERM, shutdown);
         signal (SIGINT, shutdown);
@@ -60,8 +46,9 @@ int main (int argc, char** argv) {
         size_t hwThreads = boost::thread::hardware_concurrency ();
 
         for (size_t n = 0; n < hwThreads; n++) {
-            boost::shared_ptr<pikia::worker> worker (new pikia::worker (realmId, sqlString, redisHost, redisPort, beanHost, beanPort) );
+            boost::shared_ptr<pikia::worker> worker (new pikia::worker (vm["config"].as<std::string> () ) );
 
+            reloadSignal.connect (boost::bind (&pikia::worker::reload, worker) );
             shutdownSignal.connect (boost::bind (&pikia::worker::shutdown, worker) );
             group.create_thread (boost::bind (&pikia::worker::do_work, worker) );
         }

@@ -10,14 +10,12 @@ namespace pikia {
         ];
     }
 
-    job_dispatcher::job_dispatcher (boost::shared_ptr<connection_bundle> _bundle)
-    : bundle (_bundle) {
+    job_dispatcher::job_dispatcher () {
         this->setup_lua ();
     }
 
     job_dispatcher::~job_dispatcher () {
         // callbacks must be destroyed before lua is unloaded because they contain references to lua objects
-        this->jobHandlers.clear ();
         this->close_lua ();
     }
 
@@ -41,6 +39,8 @@ namespace pikia {
     }
 
     bool job_dispatcher::dispatch_job (job_context& _context) {
+        boost::mutex::scoped_lock lock (this->luaMutex);
+
         std::cout << "Dispatching event..." << std::endl;
         std::map<uint32_t, boost::function<bool (job_context&)> >::iterator it = this->jobHandlers.find (_context.id);
         if (it != this->jobHandlers.end () ) {
@@ -54,7 +54,14 @@ namespace pikia {
         return false;
     }
 
+    void job_dispatcher::reload () {
+        this->close_lua();
+        this->setup_lua();
+    }
+
     void job_dispatcher::setup_lua () {
+        boost::mutex::scoped_lock lock (this->luaMutex);
+
         std::cout << "Setting up lua..." << std::endl;
 
         this->lua = luaL_newstate ();
@@ -85,6 +92,11 @@ namespace pikia {
     }
 
     void job_dispatcher::close_lua () {
+        boost::mutex::scoped_lock lock (this->luaMutex);
+
+        std::cout << "Shutting down lua..." << std::endl;
+
+        this->jobHandlers.clear ();
         lua_close (this->lua);
     }
 }

@@ -8,10 +8,11 @@
 namespace pikia {
     class connection_bundle {
         public:
-            connection_bundle (std::string _sqlString, std::string _redisHost, uint16_t _redisPort, std::string _beanHost, uint16_t _beanPort) {
-                this->sql = new pqxx::connection (_sqlString);
-                this->redis = redisConnect (_redisHost.c_str (), _redisPort);
+            connection_bundle () : connected (false) {}
+            connection_bundle (std::string _sqlString, std::string _redisHost, uint16_t _redisPort, std::string _beanHost, uint16_t _beanPort) : connected (true) {
+                this->sql = new pqxx::lazyconnection (_sqlString);
                 this->bean = new Beanstalk::Client (_beanHost, _beanPort);
+                this->redis = redisConnect (_redisHost.c_str (), _redisPort);
 
                 if (this->redis->err) {
                     throw std::runtime_error (this->redis->errstr);
@@ -30,8 +31,32 @@ namespace pikia {
                 redisFree (this->redis);
             }
 
+            void connect (std::string _sqlString, std::string _redisHost, uint16_t _redisPort, std::string _beanHost, uint16_t _beanPort) {
+                if (!this->connected) {
+                    this->sql = new pqxx::lazyconnection (_sqlString);
+                    this->bean = new Beanstalk::Client (_beanHost, _beanPort);
+                    //this->bean->connect (_beanHost, _beanPort);
+                    this->redis = redisConnect (_redisHost.c_str (), _redisPort);
+
+                    if (this->redis->err) {
+                        throw std::runtime_error (this->redis->errstr);
+                    }
+                }
+            }
+
+            void disconnect () {
+                if (this->connected) {
+                    delete this->sql;
+                    delete this->bean;
+                    //this->bean->disconnect();
+                    redisFree (this->redis);
+                }
+            }
+
         public:
-            pqxx::connection* sql;
+            bool connected;
+
+            pqxx::lazyconnection* sql;
             Beanstalk::Client* bean;
             redisContext* redis;
     };
