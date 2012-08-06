@@ -13,10 +13,11 @@ namespace pikia {
 
         // TEST
         job_buffer buf;
+        buf.write_int (1);
         buf.write_int (8);
         buf.write_string ("I'm from a job!");
         job_context context;
-        context.id = 1;
+        context.id = buf.read_int (); // TODO read functions need to remove read data from the buffer
         context.buf = buf;
         this->dispatcher->dispatch_job (context);
     }
@@ -34,7 +35,13 @@ namespace pikia {
             // reserve a job from beanstalk
             if (this->bundle->bean->reserve (job, 0) ) {
                 // get the data out of the job into a buffer for parsing
+                job_context context;
                 job_buffer buf (job);
+
+                context.id = buf.read_int ();
+                context.buf = buf;
+
+                this->dispatcher->dispatch_job (context);
 
                 // TODO put the reply
 

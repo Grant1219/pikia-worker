@@ -11,5 +11,6 @@ namespace pikia {
         public:
             uint32_t id;
             job_buffer buf;
+            job_buffer reply;
     };
 }
