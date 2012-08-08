@@ -40,6 +40,8 @@ namespace pikia {
              */
             void reset ();
 
+            std::string buffer ();
+
             job_buffer& operator= (const job_buffer& _buf) {
                 this->buf.str (_buf.buf.str () );
                 this->buf.pubseekpos (_buf.pos);

@@ -56,4 +56,8 @@ namespace pikia {
     void job_buffer::reset () {
         this->pos = 0;
     }
+
+    std::string job_buffer::buffer () {
+        return this->buf.str ();
+    }
 }
