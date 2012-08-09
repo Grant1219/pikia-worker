@@ -6,16 +6,16 @@
 #include <worker.hpp>
 
 namespace pikia {
-    worker::worker (const std::string& _configFile)
-        : configFile (_configFile), done (false), reloading (false),
-        bundle (new connection_bundle () ),
+    worker::worker (std::shared_ptr<configuration> _config)
+        : done (false), reloading (false),
+        config (_config),
+        bundle (new connection_bundle (_config) ),
         dispatcher (new job_dispatcher () ),
-        scriptManager (new script_manager (dispatcher) ) {
-        this->load_config ();
-        this->scriptManager->setup (this->config.scriptsPath);
-        this->setup_worker ();
+        scriptManager (new script_manager (_config, dispatcher) ) {
+        this->setup ();
 
         // TEST
+        /*
         job_buffer buf;
         buf.write_int<uint32_t> (1);
         buf.write_int<int32_t> (8);
@@ -24,11 +24,12 @@ namespace pikia {
         context.id = buf.read_int<uint32_t> ();
         context.buf = buf;
         this->dispatcher->dispatch_job (context);
+        */
     }
 
     worker::~worker () {
         std::cout << "Worker at " << this << " shutting down!" << std::endl;
-        this->dispatcher->clear_handlers ();
+        this->close ();
     }
 
     void worker::do_work () {
@@ -67,14 +68,11 @@ namespace pikia {
     void worker::reload () {
         this->reloading = true;
 
-        this->load_config ();
-
-        this->close_worker ();
-        // callbacks must be destroyed before lua is unloaded because they contain references to lua objects
-        this->dispatcher->clear_handlers ();
+        this->close ();
         // TODO readd c++ event handlers?
-        this->scriptManager->reload (this->config.scriptsPath);
-        this->setup_worker ();
+        this->scriptManager->reload ();
+        this->bundle->reload ();
+        this->setup ();
 
         this->reloading = false;
     }
@@ -83,39 +81,17 @@ namespace pikia {
         done = true;
     }
 
-    void worker::load_config () {
-        std::cout << "Loading config file..." << std::endl;
-
-        // read the config file values
-        boost::property_tree::ptree pt;
-        boost::property_tree::ini_parser::read_ini (this->configFile, pt);
-
-        this->config.sqlConnectionString = "host=" + pt.get<std::string> ("postgres.host") \
-                                         + " user=" + pt.get<std::string> ("postgres.user") \
-                                         + " password=" + pt.get<std::string> ("postgres.pass");
-
-        this->config.redisHost = pt.get<std::string> ("redis.host");
-        this->config.redisPort = pt.get<uint16_t> ("redis.port");
-        this->config.beanHost = pt.get<std::string> ("beanstalk.host");
-        this->config.beanPort = pt.get<uint16_t> ("beanstalk.port");
-
-        this->config.realmId = pt.get<int> ("realm.id");
-
-        this->config.scriptsPath = pt.get<std::string> ("scripts.path");
-    }
-
-    void worker::setup_worker () {
-        // connection to the servers
-        std::cout << "Connecting to beanstalk, postgres, redis..." << std::endl;
-        this->bundle->connect (this->config.sqlConnectionString, this->config.redisHost, this->config.redisPort, this->config.beanHost, this->config.beanPort);
+    void worker::setup () {
+        this->realmId = config->get<uint32_t> ("realm.id");
 
         // setup the beanstalk tubes to use and watch
         this->bundle->bean->ignore ("default");
-        this->bundle->bean->watch ("worker:" + std::to_string (this->config.realmId) );
-        this->bundle->bean->use ("realm:" + std::to_string (this->config.realmId) );
+        this->bundle->bean->watch ("worker:" + std::to_string (this->realmId) );
+        this->bundle->bean->use ("realm:" + std::to_string (this->realmId) );
     }
 
-    void worker::close_worker () {
-        this->bundle->disconnect ();
+    void worker::close () {
+        // callbacks must be destroyed before lua is unloaded because they contain references to lua objects
+        this->dispatcher->clear_handlers ();
     }
 }

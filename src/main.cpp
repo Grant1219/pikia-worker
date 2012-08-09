@@ -1,15 +1,17 @@
-#include <iostream>
-#include <fstream>
-#include <string>
 #include <csignal>
+#include <memory>
 #include <functional>
+#include <iostream>
+#include <string>
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/signal.hpp>
+#include <configuration.hpp>
 #include <worker.hpp>
 
 boost::signal<void ()> shutdownSignal;
 boost::signal<void ()> reloadSignal;
+std::shared_ptr<pikia::configuration> config;
 
 void shutdown (int _param) {
     std::cout << "Received shutdown signal!" << std::endl;
@@ -18,6 +20,7 @@ void shutdown (int _param) {
 
 void reload (int _param) {
     std::cout << "Received reload signal!" << std::endl;
+    config->reload ();
     reloadSignal ();
 }
 
@@ -41,11 +44,13 @@ int main (int argc, char** argv) {
         signal (SIGINT, shutdown);
         signal (SIGUSR1, reload);
 
+        config = std::shared_ptr<pikia::configuration> (new pikia::configuration (vm["config"].as<std::string> () ) );
+
         boost::thread_group group;
         size_t hwThreads = boost::thread::hardware_concurrency ();
 
         for (size_t n = 0; n < hwThreads; n++) {
-            boost::shared_ptr<pikia::worker> worker (new pikia::worker (vm["config"].as<std::string> () ) );
+            boost::shared_ptr<pikia::worker> worker (new pikia::worker (config) );
 
             reloadSignal.connect (std::bind (&pikia::worker::reload, worker) );
             shutdownSignal.connect (std::bind (&pikia::worker::shutdown, worker) );
