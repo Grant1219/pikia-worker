@@ -13,18 +13,6 @@ namespace pikia {
         dispatcher (new job_dispatcher () ),
         scriptManager (new script_manager (_config, dispatcher) ) {
         this->setup ();
-
-        // TEST
-        /*
-        job_buffer buf;
-        buf.write_int<uint32_t> (1);
-        buf.write_int<int32_t> (8);
-        buf.write_string ("I'm from a job!");
-        job_context context;
-        context.id = buf.read_int<uint32_t> ();
-        context.buf = buf;
-        this->dispatcher->dispatch_job (context);
-        */
     }
 
     worker::~worker () {
