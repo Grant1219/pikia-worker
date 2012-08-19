@@ -5,7 +5,7 @@ set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${WORKER_SOURCE_DIR}/cmake/Modules/
 
 set (Boost_USE_MULTITHREADED ON)
 
-find_package (Boost COMPONENTS filesystem program_options thread signals REQUIRED)
+find_package (Boost COMPONENTS filesystem program_options thread signals system REQUIRED)
 find_package (Lua51 REQUIRED)
 find_package (PostgreSQL REQUIRED)
 find_package (PQXX REQUIRED)
