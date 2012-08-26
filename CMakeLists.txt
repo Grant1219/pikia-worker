@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 project (WORKER)
 
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${WORKER_SOURCE_DIR}/cmake/Modules/")
+set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${WORKER_SOURCE_DIR}/cmake/Modules/")
 
 set (Boost_USE_MULTITHREADED ON)
 
