@@ -50,7 +50,7 @@ if (NOT LUABIND_INCLUDE_DIR OR NOT LUABIND_LIBRARIES)
         set (LUABIND_LIBRARIES ${LUABIND_LIBRARY} CACHE STRING "Luabind Libraries")
     endif (LUABIND_LIBRARY)
 
-    INCLUDE (FindPackageHandleStandardArgs)
+    include (FindPackageHandleStandardArgs)
     # handle the QUIETLY and REQUIRED arguments and set LUABIND_FOUND to TRUE if
     # all listed variables are TRUE
     find_package_handle_standard_args (Luabind DEFAULT_MSG LUABIND_LIBRARIES LUABIND_INCLUDE_DIR)

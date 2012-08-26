@@ -39,7 +39,7 @@ if (NOT PQXX_INCLUDE_DIR OR NOT PQXX_LIBRARIES)
         set (PQXX_LIBRARIES ${PQXX_LIBRARY} CACHE STRING "Libraries for PostgreSQL C++ interface")
     endif (PQXX_LIBRARY)
 
-    INCLUDE (FindPackageHandleStandardArgs)
+    include (FindPackageHandleStandardArgs)
     # handle the QUIETLY and REQUIRED arguments and set LUABIND_FOUND to TRUE if
     # all listed variables are TRUE
     find_package_handle_standard_args (PQXX DEFAULT_MSG PQXX_LIBRARIES PQXX_INCLUDE_DIR)
