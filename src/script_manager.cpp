@@ -1,3 +1,4 @@
+#include <vector>
 #include <boost/filesystem.hpp>
 #include <script_manager.hpp>
 
@@ -35,7 +36,7 @@ namespace pikia {
         job_context::bind (this->lua);
         script_manager::bind (this->lua);
 
-        luabind::globals (this->lua) ["dispatcher"] = this;
+        luabind::globals (this->lua) ["script_manager"] = this;
 
         // load the scripts
         int result;

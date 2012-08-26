@@ -28,6 +28,9 @@ namespace pikia {
                 std::cout << "Error dispatching job: " << e.what () << std::endl;
             }
         }
+        else
+            throw job_invalid ();
+
         return false;
     }
 

@@ -36,15 +36,15 @@ namespace pikia {
         : pos (0), buf (_job.body () ) {} 
 
     std::string job_buffer::read_string () {
-        size_t length;
-        get<size_t> (this->buf, length);
+        uint16_t length;
+        get<uint16_t> (this->buf, length);
         char value[length];
         this->pos += this->buf.sgetn (value, length);
         return value;
     }
 
     void job_buffer::write_string (std::string _value) {
-        put<size_t> (this->buf, _value.length () );
+        put<uint16_t> (this->buf, _value.length () );
         this->buf.sputn (_value.c_str (), _value.length () ); 
     }
 

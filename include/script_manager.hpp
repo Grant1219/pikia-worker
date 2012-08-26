@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <memory>
 #include <lua.hpp>
 #include <luabind/luabind.hpp>

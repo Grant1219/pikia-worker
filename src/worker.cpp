@@ -26,7 +26,7 @@ namespace pikia {
         Beanstalk::Job job;
 
         while (!this->done) {
-            // done do anything while this worker is reloading
+            // don't do anything while this worker is reloading
             while (this->reloading)
                 boost::this_thread::yield ();
 
@@ -39,14 +39,22 @@ namespace pikia {
                 context.id = buf.read_int<uint32_t> ();
                 context.buf = buf;
 
-                if (this->dispatcher->dispatch_job (context) ) {
-                    // TODO put the reply
-                    this->bundle->bean->del (job.id () );
+                try {
+                    if (this->dispatcher->dispatch_job (context) ) {
+                        // TODO put the reply
+                        std::cout << "Completed job with ID: " << job.id () << std::endl;
+                    }
+                    else {
+                        // TODO possibly bury this job and handle it later?
+                        std::cout << "Failed to dispatch job with ID: " << job.id () << std::endl;
+                    }
                 }
-                else {
-                    // failed, release the job and let another worker try
-                    this->bundle->bean->release (job);
+                catch (job_invalid& e) {
+                    std::cout << e.what () << std::endl;
                 }
+
+                // delete the job whether it succeeded or failed
+                this->bundle->bean->del (job.id () );
             }
             else
                 boost::this_thread::yield ();
